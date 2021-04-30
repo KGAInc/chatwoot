@@ -10,6 +10,7 @@ export const playNotificationAudio = () => {
   }
 };
 
+
 export const getAlertAudio = async () => {
   window.playAudioAlert = () => {};
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
