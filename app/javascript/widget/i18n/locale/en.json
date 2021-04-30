@@ -25,7 +25,7 @@
   "BUBBLE": {
     "LABEL": "Chat with us"
   },
-  "POWERED_BY": "Powered by Chatwoot",
+  "POWERED_BY": "",
   "EMAIL_PLACEHOLDER": "Please enter your email",
   "CHAT_PLACEHOLDER": "Type your message",
   "TODAY": "Today",
@@ -36,6 +36,11 @@
         "LABEL": "Full Name",
         "PLACEHOLDER": "Please enter your full name",
         "ERROR": "Full Name is required"
+      },
+      "COMPANY_NAME": {
+        "LABEL": "Company Name",
+        "PLACEHOLDER": "Please enter your company",
+        "ERROR": "Company is required"
       },
       "EMAIL_ADDRESS": {
         "LABEL": "Email Address",

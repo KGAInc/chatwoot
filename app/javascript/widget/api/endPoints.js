@@ -9,6 +9,7 @@ const createConversation = params => {
       contact: {
         name: params.fullName,
         email: params.emailAddress,
+        company_name: params.companyName,
       },
       message: {
         content: params.message,

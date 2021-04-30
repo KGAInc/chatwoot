@@ -68,7 +68,7 @@ class Api::V1::Widget::BaseController < ApplicationController
         mergee_contact: @contact
       ).perform
     else
-      @contact.update!(email: email, name: contact_name)
+      @contact.update!(email: email, name: contact_name, additional_attributes: { company_name: contact_company})
     end
   end
 
@@ -78,6 +78,10 @@ class Api::V1::Widget::BaseController < ApplicationController
 
   def contact_name
     params[:contact][:name] || contact_email.split('@')[0]
+  end
+
+  def contact_company
+    params[:contact][:company_name] || 'Unknown'
   end
 
   def browser_params

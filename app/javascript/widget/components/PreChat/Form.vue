@@ -30,6 +30,19 @@
           : ''
       "
     />
+    <form-input
+      v-if="options.requireEmail"
+      v-model="companyName"
+      class="mt-5"
+      :label="$t('PRE_CHAT_FORM.FIELDS.COMPANY_NAME.LABEL')"
+      :placeholder="$t('PRE_CHAT_FORM.FIELDS.COMPANY_NAME.PLACEHOLDER')"
+      type="text"
+      :error="
+        $v.companyName.$error
+          ? $t('PRE_CHAT_FORM.FIELDS.COMPANY_NAME.ERROR')
+          : ''
+      "
+    />
     <form-text-area
       v-model="message"
       class="my-5"
@@ -73,11 +86,9 @@ export default {
   },
   validations() {
     const identityValidations = {
-      fullName: {
-        required,
-      },
+      fullName: {},
+      companyName: {},
       emailAddress: {
-        required,
         email,
       },
     };
@@ -120,6 +131,7 @@ export default {
       }
       this.$store.dispatch('conversation/createConversation', {
         fullName: this.fullName,
+        companyName: this.companyName,
         emailAddress: this.emailAddress,
         message: this.message,
       });
