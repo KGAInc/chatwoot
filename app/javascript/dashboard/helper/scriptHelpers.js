@@ -1,4 +1,6 @@
 import AnalyticsHelper from './AnalyticsHelper';
+import LogRocket from 'logrocket';
+import DashboardAudioNotificationHelper from './AudioAlerts/DashboardAudioNotificationHelper';
 
 export const CHATWOOT_SET_USER = 'CHATWOOT_SET_USER';
 export const CHATWOOT_RESET = 'CHATWOOT_RESET';
@@ -9,8 +11,33 @@ export const ANALYTICS_RESET = 'ANALYTICS_RESET';
 export const initializeAnalyticsEvents = () => {
   window.bus.$on(ANALYTICS_IDENTITY, ({ user }) => {
     AnalyticsHelper.identify(user);
+    if (window.logRocketProjectId) {
+      LogRocket.identify(user.id, {
+        email: user.email,
+        name: user.name,
+      });
+    }
   });
   window.bus.$on(ANALYTICS_RESET, () => {});
+};
+
+const initializeAudioAlerts = user => {
+  // InitializeAudioNotifications
+  const { ui_settings: uiSettings } = user || {};
+  const {
+    always_play_audio_alert: alwaysPlayAudioAlert,
+    enable_audio_alerts: audioAlertType,
+    alert_if_unread_assigned_conversation_exist: alertIfUnreadConversationExist,
+    notification_tone: audioAlertTone,
+  } = uiSettings;
+
+  DashboardAudioNotificationHelper.setInstanceValues({
+    currentUserId: user.id,
+    audioAlertType: audioAlertType || 'none',
+    audioAlertTone: audioAlertTone || 'ding',
+    alwaysPlayAudioAlert: alwaysPlayAudioAlert || false,
+    alertIfUnreadConversationExist: alertIfUnreadConversationExist || false,
+  });
 };
 
 export const initializeChatwootEvents = () => {
@@ -32,5 +59,7 @@ export const initializeChatwootEvents = () => {
         cloudCustomer: 'true',
       });
     }
+
+    initializeAudioAlerts(user);
   });
 };

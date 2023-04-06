@@ -1,8 +1,22 @@
 <template>
   <div class="message-text--metadata">
-    <span class="time" :class="{ delivered: messageRead }">{{
-      readableTime
-    }}</span>
+    <span
+      class="time"
+      :class="{
+        'has-status-icon':
+          showSentIndicator || showDeliveredIndicator || showReadIndicator,
+      }"
+    >
+      {{ readableTime }}
+    </span>
+    <span v-if="externalError" class="read-indicator-wrap">
+      <fluent-icon
+        v-tooltip.top-start="externalError"
+        icon="error-circle"
+        class="action--icon"
+        size="14"
+      />
+    </span>
     <span v-if="showReadIndicator" class="read-indicator-wrap">
       <fluent-icon
         v-tooltip.top-start="$t('CHAT_LIST.MESSAGE_READ')"
@@ -11,7 +25,7 @@
         size="14"
       />
     </span>
-    <span v-if="showDeliveredIndicator" class="read-indicator-wrap">
+    <span v-else-if="showDeliveredIndicator" class="read-indicator-wrap">
       <fluent-icon
         v-tooltip.top-start="$t('CHAT_LIST.DELIVERED')"
         icon="checkmark-double"
@@ -19,7 +33,7 @@
         size="14"
       />
     </span>
-    <span v-if="showSentIndicator" class="read-indicator-wrap">
+    <span v-else-if="showSentIndicator" class="read-indicator-wrap">
       <fluent-icon
         v-tooltip.top-start="$t('CHAT_LIST.SENT')"
         icon="checkmark"
@@ -74,19 +88,25 @@
 import { MESSAGE_TYPE, MESSAGE_STATUS } from 'shared/constants/messages';
 import { BUS_EVENTS } from 'shared/constants/busEvents';
 import inboxMixin from 'shared/mixins/inboxMixin';
+import { mapGetters } from 'vuex';
+import timeMixin from '../../../../mixins/time';
 
 export default {
-  mixins: [inboxMixin],
+  mixins: [inboxMixin, timeMixin],
   props: {
     sender: {
       type: Object,
       default: () => ({}),
     },
-    readableTime: {
+    createdAt: {
+      type: Number,
+      default: 0,
+    },
+    storySender: {
       type: String,
       default: '',
     },
-    storySender: {
+    externalError: {
       type: String,
       default: '',
     },
@@ -130,12 +150,9 @@ export default {
       type: [String, Number],
       default: 0,
     },
-    messageRead: {
-      type: Boolean,
-      default: false,
-    },
   },
   computed: {
+    ...mapGetters({ currentChat: 'getSelectedChat' }),
     inbox() {
       return this.$store.getters['inboxes/getInbox'](this.inboxId);
     },
@@ -145,6 +162,9 @@ export default {
     isOutgoing() {
       return MESSAGE_TYPE.OUTGOING === this.messageType;
     },
+    isTemplate() {
+      return MESSAGE_TYPE.TEMPLATE === this.messageType;
+    },
     isDelivered() {
       return MESSAGE_STATUS.DELIVERED === this.messageStatus;
     },
@@ -153,6 +173,9 @@ export default {
     },
     isSent() {
       return MESSAGE_STATUS.SENT === this.messageStatus;
+    },
+    readableTime() {
+      return this.messageTimestamp(this.createdAt, 'LLL d, h:mm a');
     },
     screenName() {
       const { additional_attributes: additionalAttributes = {} } =
@@ -174,28 +197,52 @@ export default {
       const { storySender, storyId } = this;
       return `https://www.instagram.com/stories/${storySender}/${storyId}`;
     },
+    showStatusIndicators() {
+      if ((this.isOutgoing || this.isTemplate) && !this.isPrivate) {
+        return true;
+      }
+      return false;
+    },
     showSentIndicator() {
-      return (
-        this.isOutgoing &&
-        this.sourceId &&
-        (this.isAnEmailChannel || (this.isAWhatsAppChannel && this.isSent))
-      );
+      if (!this.showStatusIndicators) {
+        return false;
+      }
+
+      if (this.isAnEmailChannel) {
+        return !!this.sourceId;
+      }
+
+      if (this.isAWhatsAppChannel) {
+        return this.sourceId && this.isSent;
+      }
+      return false;
     },
     showDeliveredIndicator() {
-      return (
-        this.isOutgoing &&
-        this.sourceId &&
-        this.isAWhatsAppChannel &&
-        this.isDelivered
-      );
+      if (!this.showStatusIndicators) {
+        return false;
+      }
+
+      if (this.isAWhatsAppChannel) {
+        return this.sourceId && this.isDelivered;
+      }
+
+      return false;
     },
     showReadIndicator() {
-      return (
-        this.isOutgoing &&
-        this.sourceId &&
-        this.isAWhatsAppChannel &&
-        this.isRead
-      );
+      if (!this.showStatusIndicators) {
+        return false;
+      }
+
+      if (this.isAWebWidgetInbox) {
+        const { contact_last_seen_at: contactLastSeenAt } = this.currentChat;
+        return contactLastSeenAt >= this.createdAt;
+      }
+
+      if (this.isAWhatsAppChannel) {
+        return this.sourceId && this.isRead;
+      }
+
+      return false;
     },
   },
   methods: {
@@ -218,12 +265,13 @@ export default {
 
     .action--icon {
       color: var(--white);
+
       &.read-tick {
         color: var(--v-100);
       }
 
       &.read-indicator {
-        color: var(--g-300);
+        color: var(--g-200);
       }
     }
 
@@ -288,8 +336,9 @@ export default {
       position: absolute;
       right: var(--space-small);
       white-space: nowrap;
-      &.delivered {
-        right: var(--space-medium);
+
+      &.has-status-icon {
+        right: var(--space-large);
         line-height: 2;
       }
     }

@@ -9,6 +9,14 @@ module MessageFilterHelpers
     incoming? || outgoing?
   end
 
+  def slack_hook_sendable?
+    incoming? || outgoing? || template?
+  end
+
+  def notifiable?
+    incoming? || outgoing?
+  end
+
   def conversation_transcriptable?
     incoming? || outgoing?
   end
